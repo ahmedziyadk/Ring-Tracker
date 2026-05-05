@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "161276889494",
+    "project_id": "gemstone-orders",
+    "storage_bucket": "gemstone-orders.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161276889494:android:2d43385695930d9d4b35b7",
+        "android_client_info": {
+          "package_name": "com.gemstone.orders"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvSIf5KC5HeSpRdSPk49ZmKAjt4UCl1BE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161276889494:android:30b8670f1b89707c4b35b7",
+        "android_client_info": {
+          "package_name": "com.gemstone.ring_tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvSIf5KC5HeSpRdSPk49ZmKAjt4UCl1BE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
