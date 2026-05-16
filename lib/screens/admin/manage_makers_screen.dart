@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/order_service.dart';
 import '../../models/order_model.dart';
+import '../../models/order_status.dart';
 
 class ManageMakersScreen extends StatefulWidget {
   const ManageMakersScreen({super.key});
@@ -457,16 +458,16 @@ class _ManageMakersScreenState
                       orderSnapshot.data ?? [];
                   final pending = orders
                       .where(
-                          (o) => o.status != 'completed')
+                          (o) => !OrderStatus.isReady(o.status))
                       .length;
                   final completed = orders
                       .where(
-                          (o) => o.status == 'completed')
+                          (o) => OrderStatus.isReady(o.status))
                       .length;
                   final urgent = orders
                       .where((o) =>
                   o.isUrgent &&
-                      o.status != 'completed')
+                      !OrderStatus.isReady(o.status))
                       .length;
 
                   return Container(
@@ -588,7 +589,7 @@ class _ManageMakersScreenState
                                         const SizedBox(
                                             width: 6),
                                         _statPill(
-                                            '$completed done',
+                                            '$completed ready',
                                             const Color(
                                                 0xFF16A34A),
                                             const Color(

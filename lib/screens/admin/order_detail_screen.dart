@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/order_model.dart';
+import '../../models/order_status.dart';
 import '../../services/order_service.dart';
 import '../../services/pdf_service.dart';
 import 'edit_order_screen.dart';
@@ -25,7 +26,7 @@ class OrderDetailScreen extends StatelessWidget {
         order.expectedDelivery.difference(DateTime.now()).inDays;
     return daysLeft <= 7 &&
         daysLeft >= 0 &&
-        order.status != 'completed';
+        !OrderStatus.isReady(order.status);
   }
 
   int get _daysLeft =>
@@ -588,19 +589,19 @@ Please update the order status in Ring Tracker.
           Wrap(
             spacing: 6,
             runSpacing: 8,
-            children: ['pending', 'in_progress', 'rework', 'completed']
+            children: OrderStatus.activeStatuses
                 .map((status) {
               final isSelected = order.status == status;
               Color color;
               String label;
               switch (status) {
-                case 'completed':
+                case OrderStatus.ready:
                   color = const Color(0xFF16A34A);
-                  label = 'Completed';
+                  label = 'Ready';
                   break;
-                case 'in_progress':
+                case OrderStatus.withMaker:
                   color = const Color(0xFF2563EB);
-                  label = 'In Progress';
+                  label = 'With Maker';
                   break;
                 case 'rework':
                   color = const Color(0xFFB45309);

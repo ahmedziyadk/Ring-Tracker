@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 import '../../services/pdf_service.dart';
 import '../../models/order_model.dart';
+import '../../models/order_status.dart';
 import 'add_order_screen.dart';
 import 'order_detail_screen.dart';
 import 'notifications_screen.dart';
@@ -39,7 +40,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   bool _isOverdue(DateTime expectedDelivery, String status) {
-    return expectedDelivery.isBefore(DateTime.now()) && status != 'completed';
+    return expectedDelivery.isBefore(DateTime.now()) && !OrderStatus.isReady(status);
   }
 
   String _orderDisplayId(OrderModel order) {
@@ -344,8 +345,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       stream: _orderService.getOrdersByMaker(maker['id']),
       builder: (context, snapshot) {
         final orders = snapshot.data ?? [];
-        final pending = orders.where((o) => o.status != 'completed').length;
-        final urgent = orders.where((o) => o.isUrgent && o.status != 'completed').length;
+        final pending = orders.where((o) => !OrderStatus.isReady(o.status)).length;
+        final urgent = orders.where((o) => o.isUrgent && !OrderStatus.isReady(o.status)).length;
 
         return ListTile(
           onTap: () {
@@ -425,7 +426,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       builder: (context, snapshot) {
         final orders = snapshot.data ?? [];
         final pending = orders.where((o) => o.status == 'pending').length;
-        final completed = orders.where((o) => o.status == 'completed').length;
+        final completed = orders.where((o) => OrderStatus.isReady(o.status)).length;
         final rework = orders.where((o) => o.status == 'rework').length;
         final overdue = orders.where((o) => _isOverdue(o.expectedDelivery, o.status)).length;
 
@@ -436,7 +437,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               _statCard('Pending', pending, kGold, false),
               const SizedBox(width: 8),
-              _statCard('Completed', completed, const Color(0xFF16A34A), false),
+              _statCard('Ready', completed, const Color(0xFF16A34A), false),
               const SizedBox(width: 8),
               _statCard('Rework', rework, const Color(0xFFB45309), rework > 0),
               const SizedBox(width: 8),
@@ -564,7 +565,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         }
 
         final urgentOrders = orders
-            .where((o) => o.isUrgent && o.status != 'completed' && o.status != 'rework')
+            .where((o) => o.isUrgent && !OrderStatus.isReady(o.status) && o.status != 'rework')
             .toList();
         final overdueOrders = orders
             .where((o) => !o.isUrgent && o.status != 'rework' && _isOverdue(o.expectedDelivery, o.status))
@@ -576,7 +577,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               o.status != 'rework' &&
               !_isOverdue(o.expectedDelivery, o.status) &&
               _isDueSoon(o.expectedDelivery) &&
-              o.status != 'completed',
+              !OrderStatus.isReady(o.status),
         )
             .toList();
         final pendingOrders = orders
@@ -585,11 +586,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
           !o.isUrgent &&
               !_isOverdue(o.expectedDelivery, o.status) &&
               !_isDueSoon(o.expectedDelivery) &&
-              (o.status == 'pending' || o.status == 'in_progress'),
+              (o.status == OrderStatus.pending || OrderStatus.isWithMaker(o.status)),
         )
             .toList();
         final reworkOrders = orders.where((o) => o.status == 'rework').toList();
-        final completedOrders = orders.where((o) => o.status == 'completed').toList();
+        final completedOrders = orders.where((o) => OrderStatus.isReady(o.status)).toList();
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -631,12 +632,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
               emptyIcon: Icons.replay_outlined,
             ),
             _buildPanel(
-              title: 'Completed',
+              title: 'Ready',
               barColor: const Color(0xFF16A34A),
               badgeColor: const Color(0xFFF0FDF4),
               badgeTextColor: const Color(0xFF15803D),
               orders: completedOrders,
-              emptyMessage: 'No completed orders',
+              emptyMessage: 'No ready orders',
               emptyIcon: Icons.check_circle_outline,
             ),
             _buildPanel(
@@ -738,7 +739,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildOrderCard(OrderModel order, {bool isOverdue = false}) {
-    final dueSoon = _isDueSoon(order.expectedDelivery) && order.status != 'completed';
+    final dueSoon = _isDueSoon(order.expectedDelivery) && !OrderStatus.isReady(order.status);
     final days = order.expectedDelivery.difference(DateTime.now()).inDays;
     final overdueDays = DateTime.now().difference(order.expectedDelivery).inDays;
 
@@ -746,7 +747,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     if (order.isUrgent) iconColor = const Color(0xFFDC2626);
     if (isOverdue) iconColor = const Color(0xFFDC2626);
     if (order.status == 'rework') iconColor = const Color(0xFFB45309);
-    if (order.status == 'completed') iconColor = const Color(0xFF16A34A);
+    if (OrderStatus.isReady(order.status)) iconColor = const Color(0xFF16A34A);
 
     final balanceText = order.balanceAmount > 0
         ? '₹${order.balanceAmount.toStringAsFixed(0)} due'

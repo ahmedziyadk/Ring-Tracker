@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../../models/order_status.dart';
 
 class CustomerOrderViewScreen extends StatelessWidget {
   final String orderId;
@@ -49,13 +50,7 @@ class CustomerOrderViewScreen extends StatelessWidget {
           final imageUrls = List<String>.from(data['imageUrls'] ?? []);
           final makerRemark = (data['makerRemark'] ?? '').toString();
           final status = (data['status'] ?? '').toString();
-          final statusLabel = status == 'in_progress'
-              ? 'In Progress'
-              : status == 'rework'
-                  ? 'Return / Rework'
-                  : status.isEmpty
-                      ? ''
-                      : status[0].toUpperCase() + status.substring(1);
+          final statusLabel = status.isEmpty ? '' : OrderStatus.label(status);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -103,13 +98,12 @@ class CustomerOrderViewScreen extends StatelessWidget {
                   'Order Date',
                   orderDate == null ? '' : DateFormat('dd/MM/yyyy').format(orderDate),
                 ),
-                if (isMakerView)
-                  _row(
-                    'സമയ പരിധി',
-                    expectedDelivery == null
-                        ? ''
-                        : DateFormat('dd/MM/yyyy').format(expectedDelivery),
-                  ),
+                _row(
+                  isMakerView ? 'സമയ പരിധി' : 'Expected Delivery',
+                  expectedDelivery == null
+                      ? ''
+                      : DateFormat('dd/MM/yyyy').format(expectedDelivery),
+                ),
                 if (makerRemark.isNotEmpty)
                   _row('Ring Maker Remark', makerRemark),
               ]),

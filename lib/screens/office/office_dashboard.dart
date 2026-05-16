@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/order_model.dart';
+import '../../models/order_status.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 import '../admin/add_order_screen.dart';
@@ -233,8 +234,8 @@ class _OfficeDashboardState extends State<OfficeDashboard> {
       stream: _orderService.getOrdersByMaker(maker['id']),
       builder: (context, snapshot) {
         final orders = snapshot.data ?? [];
-        final pending = orders.where((o) => o.status != 'completed').length;
-        final urgent = orders.where((o) => o.isUrgent && o.status != 'completed').length;
+        final pending = orders.where((o) => !OrderStatus.isReady(o.status)).length;
+        final urgent = orders.where((o) => o.isUrgent && !OrderStatus.isReady(o.status)).length;
         final makerName = maker['name'] ?? '';
 
         return ListTile(

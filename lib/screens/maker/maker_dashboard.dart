@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 import '../../models/order_model.dart';
+import '../../models/order_status.dart';
 
 class MakerDashboard extends StatefulWidget {
   const MakerDashboard({super.key});
@@ -107,27 +108,27 @@ class _MakerDashboardState extends State<MakerDashboard> {
           final orders = snapshot.data ?? [];
           final urgent = orders
               .where((o) =>
-          o.isUrgent && o.status != 'completed' && o.status != 'rework')
+          o.isUrgent && !OrderStatus.isReady(o.status) && o.status != 'rework')
               .toList();
           final dueSoon = orders
               .where((o) =>
           !o.isUrgent &&
               _isDueSoon(o.expectedDelivery) &&
-              o.status != 'completed' &&
+              !OrderStatus.isReady(o.status) &&
               o.status != 'rework')
               .toList();
           final normal = orders
               .where((o) =>
           !o.isUrgent &&
               !_isDueSoon(o.expectedDelivery) &&
-              o.status != 'completed' &&
+              !OrderStatus.isReady(o.status) &&
               o.status != 'rework')
               .toList();
           final rework = orders
               .where((o) => o.status == 'rework')
               .toList();
           final completed = orders
-              .where((o) => o.status == 'completed')
+              .where((o) => OrderStatus.isReady(o.status))
               .toList();
 
           if (orders.isEmpty) {
@@ -200,7 +201,7 @@ class _MakerDashboardState extends State<MakerDashboard> {
                 const SizedBox(height: 8),
               ],
               if (completed.isNotEmpty) ...[
-                _buildSectionHeader('Completed',
+                _buildSectionHeader('Ready',
                     completed.length,
                     const Color(0xFF16A34A),
                     const Color(0xFFF0FDF4),
@@ -270,14 +271,14 @@ class _MakerDashboardState extends State<MakerDashboard> {
 
   Widget _buildOrderCard(OrderModel order) {
     final dueSoon = _isDueSoon(order.expectedDelivery) &&
-        order.status != 'completed';
+        !OrderStatus.isReady(order.status);
     final days = _daysLeft(order.expectedDelivery);
 
     Color accentColor = kGold;
     if (order.isUrgent) accentColor = const Color(0xFFDC2626);
     if (order.status == 'rework')
       accentColor = const Color(0xFFB45309);
-    if (order.status == 'completed')
+    if (OrderStatus.isReady(order.status))
       accentColor = const Color(0xFF16A34A);
 
     return Container(
@@ -747,19 +748,19 @@ class _MakerDashboardState extends State<MakerDashboard> {
         ),
         const SizedBox(height: 8),
         Row(
-          children: ['pending', 'in_progress', 'rework', 'completed']
+          children: OrderStatus.activeStatuses
               .map((status) {
             final isSelected = order.status == status;
             Color color;
             String label;
             switch (status) {
-              case 'completed':
+              case OrderStatus.ready:
                 color = const Color(0xFF16A34A);
-                label = 'Completed';
+                label = 'Ready';
                 break;
-              case 'in_progress':
+              case OrderStatus.withMaker:
                 color = const Color(0xFF2563EB);
-                label = 'In Progress';
+                label = 'With Maker';
                 break;
               case 'rework':
                 color = const Color(0xFFB45309);

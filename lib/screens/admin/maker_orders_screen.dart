@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/order_service.dart';
 import '../../models/order_model.dart';
+import '../../models/order_status.dart';
 import 'order_detail_screen.dart';
 
 class MakerOrdersScreen extends StatelessWidget {
@@ -95,10 +96,10 @@ class MakerOrdersScreen extends StatelessWidget {
           }
 
           final pending = orders
-              .where((o) => o.status != 'completed')
+              .where((o) => !OrderStatus.isReady(o.status))
               .toList();
           final completed = orders
-              .where((o) => o.status == 'completed')
+              .where((o) => OrderStatus.isReady(o.status))
               .toList();
           final rework = orders
               .where((o) => o.status == 'rework')
@@ -116,7 +117,7 @@ class MakerOrdersScreen extends StatelessWidget {
                     _statCard('Pending', pending.length,
                         const Color(0xFFD97706)),
                     const SizedBox(width: 8),
-                    _statCard('Completed', completed.length,
+                    _statCard('Ready', completed.length,
                         const Color(0xFF16A34A)),
                     const SizedBox(width: 8),
                     _statCard('Rework', rework.length,
@@ -183,27 +184,17 @@ class MakerOrdersScreen extends StatelessWidget {
                 .difference(DateTime.now())
                 .inDays >=
                 0 &&
-            order.status != 'completed';
+            !OrderStatus.isReady(order.status);
 
-    Color statusColor;
-    String statusLabel;
-    switch (order.status) {
-      case 'completed':
-        statusColor = const Color(0xFF16A34A);
-        statusLabel = 'Completed';
-        break;
-      case 'in_progress':
-        statusColor = const Color(0xFF2563EB);
-        statusLabel = 'In Progress';
-        break;
-      case 'rework':
-        statusColor = const Color(0xFFB45309);
-        statusLabel = 'Rework';
-        break;
-      default:
-        statusColor = kGold;
-        statusLabel = 'Pending';
+    Color statusColor = kGold;
+    if (OrderStatus.isReady(order.status)) {
+      statusColor = const Color(0xFF16A34A);
+    } else if (OrderStatus.isWithMaker(order.status)) {
+      statusColor = const Color(0xFF2563EB);
+    } else if (OrderStatus.isRework(order.status)) {
+      statusColor = const Color(0xFFB45309);
     }
+    final statusLabel = OrderStatus.label(order.status);
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -235,7 +226,7 @@ class MakerOrdersScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: order.isUrgent
                       ? const Color(0xFFDC2626)
-                      : order.status == 'completed'
+                      : OrderStatus.isReady(order.status)
                       ? const Color(0xFF16A34A)
                       : order.status == 'rework'
                       ? const Color(0xFFB45309)

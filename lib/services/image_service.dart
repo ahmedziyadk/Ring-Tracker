@@ -54,6 +54,19 @@ class ImageService {
     }
   }
 
+  Future<String?> uploadSharedImage(String path, String orderId) async {
+    try {
+      final file = XFile(path);
+      return await _uploadXFile(
+        file,
+        orderId,
+        DateTime.now().millisecondsSinceEpoch,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<String?> _uploadXFile(
       XFile file, String orderId, int index) async {
     try {

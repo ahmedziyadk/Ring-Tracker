@@ -8,6 +8,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/order_model.dart';
+import '../models/order_status.dart';
 import 'package:intl/intl.dart';
 import 'package:android_intent_plus/android_intent.dart';
 
@@ -165,12 +166,7 @@ class PdfService {
                     .format(order.expectedDelivery)),
             _buildRow(
                 'Current Status',
-                order.status == 'in_progress'
-                    ? 'In Progress'
-                    : order.status == 'rework'
-                    ? 'Return / Rework'
-                    : order.status[0].toUpperCase() +
-                    order.status.substring(1)),
+                OrderStatus.label(order.status)),
           ]),
           if (order.noteToMaker.isNotEmpty) ...[
             pw.SizedBox(height: 12),
@@ -524,7 +520,7 @@ class PdfService {
 
     final urgent = orders
         .where((o) =>
-    o.isUrgent && o.status != 'completed')
+    o.isUrgent && !OrderStatus.isReady(o.status))
         .toList();
     final pending = orders
         .where((o) =>
@@ -532,16 +528,16 @@ class PdfService {
         .toList();
     final inProgress = orders
         .where((o) =>
-    !o.isUrgent && o.status == 'in_progress')
+    !o.isUrgent && OrderStatus.isWithMaker(o.status))
         .toList();
     final completed = orders
-        .where((o) => o.status == 'completed')
+        .where((o) => OrderStatus.isReady(o.status))
         .toList();
     final overdue = orders
         .where((o) =>
     o.expectedDelivery
         .isBefore(DateTime.now()) &&
-        o.status != 'completed')
+        !OrderStatus.isReady(o.status))
         .toList();
 
     pdf.addPage(
@@ -622,7 +618,7 @@ class PdfService {
                     pending.length +
                         inProgress.length,
                     '#B8960C'),
-                _summaryItem('Completed',
+                _summaryItem('Ready',
                     completed.length, '#059669'),
                 _summaryItem('Overdue',
                     overdue.length, '#DC2626'),
@@ -655,7 +651,7 @@ class PdfService {
           ],
           if (completed.isNotEmpty) ...[
             _buildPdfSectionHeader(
-                'COMPLETED ORDERS', '#059669'),
+                'READY ORDERS', '#059669'),
             pw.SizedBox(height: 8),
             _buildOrdersTable(completed),
             pw.SizedBox(height: 16),
