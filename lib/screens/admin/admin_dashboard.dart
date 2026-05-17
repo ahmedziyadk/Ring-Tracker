@@ -561,7 +561,55 @@ class _AdminDashboardState extends State<AdminDashboard> {
         orders.sort((a, b) => b.orderDate.compareTo(a.orderDate));
 
         if (_searchQuery.isNotEmpty) {
-          orders = orders.where((o) => _matchesSearch(o, _searchQuery)).toList();
+          final filtered = orders.where((o) => _matchesSearch(o, _searchQuery)).toList();
+          if (filtered.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.search_off, size: 40, color: Color(0xFFB8B2A0)),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No results for "$_searchQuery"',
+                    style: const TextStyle(color: Color(0xFF9E9886), fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            );
+          }
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+            children: [
+              Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: kCard,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: kBorder.withOpacity(0.5)),
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search, size: 16, color: kGold),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${filtered.length} result${filtered.length == 1 ? '' : 's'} found',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: kText, letterSpacing: 1.2),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...filtered.map((order) => _buildOrderCard(order, isOverdue: _isOverdue(order.expectedDelivery, order.status))),
+                  ],
+                ),
+              ),
+            ],
+          );
         }
 
         final urgentOrders = orders

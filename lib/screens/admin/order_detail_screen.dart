@@ -589,32 +589,49 @@ Please update the order status in Ring Tracker.
           Wrap(
             spacing: 6,
             runSpacing: 8,
-            children: OrderStatus.activeStatuses
+            children: [OrderStatus.pending, OrderStatus.ready]
                 .map((status) {
-              final isSelected = order.status == status;
-              Color color;
-              String label;
-              switch (status) {
-                case OrderStatus.ready:
-                  color = const Color(0xFF16A34A);
-                  label = 'Ready';
-                  break;
-                case OrderStatus.withMaker:
-                  color = const Color(0xFF2563EB);
-                  label = 'With Maker';
-                  break;
-                case 'rework':
-                  color = const Color(0xFFB45309);
-                  label = 'Rework';
-                  break;
-                default:
-                  color = kGold;
-                  label = 'Pending';
-              }
+              final isSelected = order.status == status ||
+                  (status == OrderStatus.ready && OrderStatus.isReady(order.status));
+              final color = status == OrderStatus.ready
+                  ? const Color(0xFF16A34A)
+                  : kGold;
+              final label = status == OrderStatus.ready ? 'Ready' : 'Pending';
               return SizedBox(
                 width: 120,
                 child: GestureDetector(
-                  onTap: () => orderService.updateStatus(order.id, status),
+                  onTap: isSelected
+                      ? null
+                      : () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: const Text('Confirm Status Change', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                              content: Text(
+                                'Change order status to "$label"?',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B6350))),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: color,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            orderService.updateStatus(order.id, status);
+                          }
+                        },
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
